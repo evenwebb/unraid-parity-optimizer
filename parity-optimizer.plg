@@ -2,20 +2,20 @@
 
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "parity-optimizer">
-<!ENTITY author    "YourName">
-<!ENTITY version   "2024.12.04">
+<!ENTITY author    "evenwebb">
+<!ENTITY version   "2025.09.04">
 <!ENTITY launch    "Settings/ParityOptimizer">
-<!ENTITY gitURL    "https://github.com/yourusername/unraid-parity-optimizer/releases/download/v&version;">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/yourusername/unraid-parity-optimizer/main/parity-optimizer.plg">
+<!ENTITY gitURL    "https://github.com/evenwebb/unraid-parity-optimizer/releases/download/v&version;">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/evenwebb/unraid-parity-optimizer/main/parity-optimizer.plg">
 <!ENTITY plgPATH   "/boot/config/plugins/&name;">
 <!ENTITY plgNAME   "&name;-&version;">
 <!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" support="https://github.com/yourusername/unraid-parity-optimizer/issues">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" support="https://github.com/evenwebb/unraid-parity-optimizer/issues">
 
 <CHANGES>
-###2024.12.04
+###2025.09.04
 - Initial release
 - Auto-discovery of Docker containers with visual checkbox interface
 - Configurable parity operation types (check/sync/rebuild)
@@ -38,7 +38,7 @@
 Parity Optimizer Plugin for unRAID
 Automatically manages Docker containers during parity operations for improved performance
 
-Copyright 2024, YourName
+Copyright 2025, evenwebb
 Licensed under GPLv2
 
 This plugin monitors unRAID parity operations (check/sync/rebuild) and automatically
