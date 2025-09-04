@@ -1,0 +1,185 @@
+<?xml version='1.0' standalone='yes'?>
+
+<!DOCTYPE PLUGIN [
+<!ENTITY name      "parity-optimizer">
+<!ENTITY author    "YourName">
+<!ENTITY version   "2024.12.04">
+<!ENTITY launch    "Settings/ParityOptimizer">
+<!ENTITY gitURL    "https://github.com/yourusername/unraid-parity-optimizer/releases/download/v&version;">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/yourusername/unraid-parity-optimizer/main/parity-optimizer.plg">
+<!ENTITY plgPATH   "/boot/config/plugins/&name;">
+<!ENTITY plgNAME   "&name;-&version;">
+<!ENTITY emhttp    "/usr/local/emhttp/plugins/&name;">
+]>
+
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" min="6.12.0" support="https://github.com/yourusername/unraid-parity-optimizer/issues">
+
+<CHANGES>
+###2024.12.04
+- Initial release
+- Auto-discovery of Docker containers with visual checkbox interface
+- Configurable parity operation types (check/sync/rebuild)
+- Manual override controls for emergency situations
+- Test mode for dry run simulations
+- Force restart and emergency stop capabilities
+- Native unRAID notification integration
+- Automatic rollback on parity failures/cancellation
+- Container dependency order management with unRAID integration
+- Graceful shutdown with configurable timeouts
+- Startup validation and verification
+- Responsive dark/light theme support matching unRAID
+- Integrated help system with context-sensitive tooltips
+- Real-time monitoring and status updates
+- Background daemon service for continuous monitoring
+- Comprehensive logging and debugging capabilities
+</CHANGES>
+
+<!--
+Parity Optimizer Plugin for unRAID
+Automatically manages Docker containers during parity operations for improved performance
+
+Copyright 2024, YourName
+Licensed under GPLv2
+
+This plugin monitors unRAID parity operations (check/sync/rebuild) and automatically
+stops specified Docker containers to improve parity performance, then restarts them
+when the operation completes. Features include:
+
+- Visual container selection interface
+- Real-time parity monitoring
+- Manual override controls
+- Automatic rollback on failures
+- Mobile-responsive interface
+- Comprehensive logging
+-->
+
+<!-- Remove previous installations -->
+<FILE Run="/bin/bash">
+<INLINE>
+# Stop the service if running
+/etc/rc.d/rc.&name; stop 2>/dev/null
+
+# Remove old plugin files
+rm -rf &emhttp;
+rm -rf &plgPATH;/&name;*.txz
+
+# Remove old service
+rm -f /etc/rc.d/rc.&name;
+</INLINE>
+</FILE>
+
+<!-- Download and install the plugin package -->
+<FILE Name="&plgPATH;/&plgNAME;.txz" Run="upgradepkg --install-new">
+<URL>&gitURL;/&plgNAME;.txz</URL>
+</FILE>
+
+<!-- Post-installation script -->
+<FILE Run="/bin/bash">
+<INLINE>
+# Create plugin directory structure
+mkdir -p &emhttp;
+mkdir -p &plgPATH;/logs
+mkdir -p &plgPATH;/state
+
+# Set permissions
+chmod -R 755 &emhttp;
+chown -R root:root &emhttp;
+chmod +x &emhttp;/scripts/*.php
+chmod +x &emhttp;/scripts/*.sh
+chmod +x /etc/rc.d/rc.&name;
+
+# Create default config if it doesn't exist
+if [ ! -f "&plgPATH;/parity-optimizer.cfg" ]; then
+  cat > &plgPATH;/parity-optimizer.cfg << 'EOF'
+# Parity Optimizer Configuration
+ENABLED=0
+GRACE_PERIOD=60
+RESTART_GRACE_PERIOD=300
+CHECK_INTERVAL=30
+OPERATION_TYPES=check,sync
+ENABLE_NOTIFICATIONS=1
+GRACEFUL_TIMEOUT=30
+AUTO_ROLLBACK=1
+MANAGED_CONTAINERS=
+THEME=auto
+EOF
+fi
+
+# Set config permissions
+chmod 644 &plgPATH;/parity-optimizer.cfg
+
+# Create log rotation script
+cat > &plgPATH;/rotate-logs.sh << 'EOF'
+#!/bin/bash
+LOG_FILE="/boot/config/plugins/parity-optimizer/logs/parity-optimizer.log"
+MAX_SIZE=10485760  # 10MB in bytes
+
+if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE") -gt $MAX_SIZE ]; then
+    mv "$LOG_FILE" "${LOG_FILE}.old"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] [SYSTEM] Log rotated" > "$LOG_FILE"
+fi
+EOF
+
+chmod +x &plgPATH;/rotate-logs.sh
+
+# Add to cron for log rotation (daily)
+if ! grep -q "rotate-logs.sh" /boot/config/plugins/dynamix/dynamix.cfg 2>/dev/null; then
+    echo "Adding log rotation to cron..."
+    (crontab -l 2>/dev/null; echo "0 2 * * * &plgPATH;/rotate-logs.sh >/dev/null 2>&1") | crontab -
+fi
+
+# Start the service if enabled
+if grep -q "^ENABLED=1" "&plgPATH;/parity-optimizer.cfg" 2>/dev/null; then
+    /etc/rc.d/rc.&name; start
+fi
+
+echo ""
+echo "----------------------------------------------------"
+echo " &name; has been installed successfully!"
+echo " Version: &version;"
+echo ""
+echo " • Go to Settings -> Parity Optimizer to configure"
+echo " • Enable the service and select containers to manage"
+echo " • The daemon will automatically start monitoring"
+echo ""
+echo " Plugin will optimize parity performance by stopping"
+echo " resource-intensive containers during parity operations"
+echo " and restarting them when complete."
+echo ""
+echo " Features:"
+echo " • Visual container selection"
+echo " • Real-time parity monitoring" 
+echo " • Manual override controls"
+echo " • Automatic rollback on failures"
+echo " • Mobile-responsive interface"
+echo "----------------------------------------------------"
+echo ""
+</INLINE>
+</FILE>
+
+<!-- Uninstall script -->
+<FILE Run="/bin/bash" Method="remove">
+<INLINE>
+echo "Uninstalling Parity Optimizer..."
+
+# Stop the service
+/etc/rc.d/rc.&name; stop 2>/dev/null
+
+# Remove from cron
+crontab -l 2>/dev/null | grep -v "rotate-logs.sh" | crontab -
+
+# Remove plugin files
+removepkg &plgPATH;/&plgNAME;.txz 2>/dev/null
+rm -rf &emhttp;
+rm -f /etc/rc.d/rc.&name;
+
+# Ask user about config/logs
+echo ""
+echo "Plugin files removed."
+echo "Configuration and logs are preserved in &plgPATH;"
+echo "Remove manually if you don't plan to reinstall."
+echo ""
+</INLINE>
+</FILE>
+
+</PLUGIN>
